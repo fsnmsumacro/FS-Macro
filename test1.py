@@ -1,5 +1,5 @@
-import openpyxl as xl 
-  
+import openpyxl as xl
+
 # excel file used here gfg.xlsx 
 excel_file = "C:\\Users\\indronil\\Downloads\\Projected FY24 Budget 05 Nov.xlsm"
   
@@ -35,9 +35,8 @@ def copy_monthly_sheet_data():
     
     accounts_monthly = list(set(accounts_monthly))
     wb.save("modified.xlsm")
+    print("Step 1 Done!")
     return accounts_monthly
-
-accounts = copy_monthly_sheet_data()
 
 #-----------------------------------------------------------------------------STEP_2---------------------------------------------------------------------------------
 def compare_account_numbers():
@@ -60,5 +59,4 @@ def compare_account_numbers():
         print("New accounts to add ", new_account)
     else:
         print("No new account to add!")
-
-compare_account_numbers()
+    print("Step 2 Done!")
