@@ -35,7 +35,6 @@ def copy_monthly_sheet_data():
     
     accounts_monthly = list(set(accounts_monthly))
     wb.save("modified.xlsm")
-    print("Step 1 Done!")
     return accounts_monthly
 
 #-----------------------------------------------------------------------------STEP_2---------------------------------------------------------------------------------
@@ -59,4 +58,3 @@ def compare_account_numbers():
         print("New accounts to add ", new_account)
     else:
         print("No new account to add!")
-    print("Step 2 Done!")

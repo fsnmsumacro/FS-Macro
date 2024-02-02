@@ -1,41 +1,18 @@
 import tkinter as tk
 from tkinter import PhotoImage
-import warnings
-warnings.filterwarnings('ignore')
-import test1
-
-class StatusMsg(tk.Frame):
-    def __init__(self, master, **kwargs):
-        tk.Frame.__init__(self, master, **kwargs)
-        self.status_label = tk.Label(self, text="Status: Ready", bd=1, relief=tk.SUNKEN, anchor=tk.CENTER, height=2, justify=tk.CENTER)
-        self.status_label.pack(side=tk.BOTTOM, fill=tk.X)
-
-    def progress(self, message):
-        self.status_label.config(text=f"Status: {message}")
-        
 
 class StatusBar(tk.Frame):
     def __init__(self, master, **kwargs):
         tk.Frame.__init__(self, master, **kwargs)
-        self.canvas = tk.Canvas(self, height=20, width=400, bg='white', borderwidth=2, relief=tk.SUNKEN)
-        self.canvas.pack(fill=tk.X)
+        self.status_label = tk.Label(self, text="Status: Ready", bd=1, relief=tk.SUNKEN, anchor=tk.CENTER, height=4, justify=tk.CENTER)
+        self.status_label.pack(side=tk.BOTTOM, fill=tk.X)
 
-    def progressbar(self, button_number):
-        part_width = 400 // 9
-        start_x = (button_number - 1) * part_width
-        end_x = button_number * part_width
-        self.canvas.create_rectangle(start_x, 0, end_x, 20, fill='green')
-
-
+    def progress(self, message):
+        self.status_label.config(text=f"Status: {message}")
 
 def button_click(button_number):
-    status_msg.progress(f"Step {button_number} started!")
-    if button_number==1:
-        test1.accounts = test1.copy_monthly_sheet_data()
-    elif button_number==2:
-        test1.compare_account_numbers()
-    status_bar.progressbar(button_number)
-    status_msg.progress(f"Step {button_number} completed!")
+    status_bar.progress(f"Button {button_number} execution done!")
+    # Add your button execution logic here
 
 def on_enter(event):
     event.widget.config(bg='lightblue')  # Change color on hover
@@ -47,10 +24,10 @@ def on_leave(event):
 
 # Create the main window
 window = tk.Tk()
-window.title("NMSU Facilities and Services")
+window.title("Button Example")
 
 # Set the size of the window
-window.geometry("1200x750") 
+window.geometry("1200x600")  # Set your desired width and height
 
 # Load a background image
 background_image = PhotoImage(file="ui_bg.png")  # Replace with your image file path
@@ -74,20 +51,15 @@ button_description = ["", "\nSelect MONTHLY COGNOS Input File",
                       "",
                       ""]
 for i in range(1, 10):
-    button = tk.Button(buttons_frame, text=f"STEP {i}{button_description[i]}", command=lambda i=i: button_click(i), padx=50, pady=20)
+    button = tk.Button(buttons_frame, text=f"Button {i}{button_description[i]}", command=lambda i=i: button_click(i), padx=50, pady=20)
     button.grid(row=(i-1)//2, column=(i-1)%2, padx=10, pady=10)
     button.bind("<Enter>", on_enter)
     button.bind("<Leave>", on_leave)
     buttons.append(button)
 
-
 # Create a status bar
-status_msg = StatusMsg(window, bg="lightgray")
-status_msg.pack(side=tk.BOTTOM, fill=tk.X)
 status_bar = StatusBar(window, bg="lightgray")
 status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
 # Run the main loop
 window.mainloop()
-
-
