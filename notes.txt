@@ -16,3 +16,14 @@ Need to understad the pivoting here...
 
 STEP 7: Process Expense, Expense Recovery, Budget Adjustments, & Commitments
 ... 
+
+
+
+External Source M Fuel	795300
+External Source M Fuel	795310
+Same names, different account codes, same orgs
+
+External Source Labor	795330
+External Source Labor	795300
+Same names, different account codes, different orgs
+

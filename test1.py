@@ -1,22 +1,24 @@
 import openpyxl as xl
 
-# excel file used here gfg.xlsx 
-excel_file = "C:\\Users\\indronil\\Downloads\\Projected FY24 Budget 05 Nov.xlsm"
-  
-# load the workbook 
-wb = xl.load_workbook(excel_file, keep_vba=True) 
-  
-sheets = wb.sheetnames
+# excel file used here
+excel_file = ""
+monthly_file_name = ""
+wb = None
 accounts = []
 
 #-----------------------------------------------------------------------------STEP_1---------------------------------------------------------------------------------
 def copy_monthly_sheet_data():
+    # load the workbook
+    global wb
+    wb = xl.load_workbook(excel_file, keep_vba=True) 
+    sheets = wb.sheetnames
+
     # Clear all data from the destination sheet
     destination_sheet = wb["FI-U227 Statement of Revenu (2"]
     destination_sheet.delete_rows(1, destination_sheet.max_row)
 
     # read monthly file
-    monthly_file_name = "C:\\Users\\indronil\\Downloads\\FI-U227 OCT Statement of Revenue and Expense Detail.xlsx"
+    #monthly_file_name = "C:\\Users\\indronil\\Downloads\\FI-U227 OCT Statement of Revenue and Expense Detail.xlsx"
     monthly_file = xl.load_workbook(monthly_file_name) 
     source_sheet = monthly_file.worksheets[0]
 
@@ -34,7 +36,7 @@ def copy_monthly_sheet_data():
         destination_sheet.append(row)
     
     accounts_monthly = list(set(accounts_monthly))
-    wb.save("modified.xlsm")
+    wb.save("New_modified.xlsm")
     return accounts_monthly
 
 #-----------------------------------------------------------------------------STEP_2---------------------------------------------------------------------------------
@@ -55,6 +57,44 @@ def compare_account_numbers():
             new_account.append(acct)
     
     if len(new_account) > 0:
-        print("New accounts to add ", new_account)
+        msg = "\nPart 1 : New accounts to add for new month" + new_account
     else:
-        print("No new account to add!")
+        msg = "\nPart 1 : No new account to add for new month!"
+
+    return msg
+
+def compare_summary_and_others():
+    summary_check = [] #data of the rows in summary to check
+    check = 0 # whether to check the sheet
+    msg = ""
+    for sheet in wb.sheetnames:
+        if sheet == "SUMMARY - FS (000000)":
+            for i in range (10, len(wb[sheet]['B'])+1):
+                cell = wb[sheet]['B'][i]
+                if cell.value is not None:
+                    summary_check.append(str(cell.value).replace(" ",""))
+                elif cell.value is None and i>=10:
+                    if wb[sheet]['B'][i+1].value is None and wb[sheet]['B'][i+2].value:
+                        check=1
+                        break
+                    else:
+                        summary_check.append("")
+        elif sheet == "Mapping":
+            check=0
+            
+        elif check==1:
+            for i in range (9, len(wb[sheet]['B'])+1):
+                cell = wb[sheet]['B'][i]
+                if cell.value is not None:
+                    if str(cell.value).replace(" ","") != summary_check[i-10]:
+                        print("Mismatch in line ", i+1, "with summary and ", sheet, cell.value,"!=", summary_check[i-10], "!\n")
+                        msg = "\nPart 2 : Mismatch found in "+sheet
+                        return msg
+                elif cell.value is None and i>=10:
+                    if wb[sheet]['B'][i+1].value is None and wb[sheet]['B'][i+2].value:
+                        check=1
+                        break
+
+            print(sheet, "checking completed!\n")
+    msg = "\nPart 2 : Individual Org checking completed succesfully!"
+    return msg
