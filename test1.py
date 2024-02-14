@@ -5,6 +5,7 @@ excel_file = ""
 monthly_file_name = ""
 wb = None
 accounts = []
+new_acc = []
 
 #-----------------------------------------------------------------------------STEP_1---------------------------------------------------------------------------------
 def copy_monthly_sheet_data():
@@ -41,6 +42,7 @@ def copy_monthly_sheet_data():
 
 #-----------------------------------------------------------------------------STEP_2---------------------------------------------------------------------------------
 def compare_account_numbers():
+    global new_acc
     existing_accounts = []
     for cell in wb["SUMMARY - FS (000000)"]['B']:
         try:
@@ -50,18 +52,17 @@ def compare_account_numbers():
         except:
             account_number=0
 
-    new_account = []
-
     for acct in accounts:
         if acct not in existing_accounts:
-            new_account.append(acct)
+            new_acc.append(acct)
     
-    if len(new_account) > 0:
-        msg = "\nPart 1 : New accounts to add for new month" + new_account
+    if len(new_acc) > 0:
+        msg = "\nPart 1 : New accounts to add for new month" + str(new_acc)
+
     else:
         msg = "\nPart 1 : No new account to add for new month!"
 
-    return msg
+    return msg, new_acc
 
 def compare_summary_and_others():
     summary_check = [] #data of the rows in summary to check
@@ -98,3 +99,6 @@ def compare_summary_and_others():
             print(sheet, "checking completed!\n")
     msg = "\nPart 2 : Individual Org checking completed succesfully!"
     return msg
+
+def add_account(account_number, account_name, account_type):
+    
