@@ -34,23 +34,33 @@ class StatusBar(tk.Frame):
         self.canvas.create_rectangle(start_x, 0, end_x, 20, fill='green')
 
 def button_click(button_number): # Button click triggering
-    msg = ""
     button_start(button_number)
     button_function(button_number)
-    window.after(500, button_done, msg, button_number)
 
 def button_function(button_number): # Button functions on click
+    msg = ""
     if button_number==1:
         file = upload_file()
         test1.excel_file = file.replace("/", "\\")
         monthly_file = upload_file_monthly()
         test1.monthly_file_name = monthly_file.replace("/", "\\")
         test1.accounts = test1.copy_monthly_sheet_data()
+        window.after(500, button_done, msg, button_number)
+
     elif button_number==2:
-        msg, new_account= test1.compare_account_numbers()
+        msg = test1.compare_account_numbers()
         msg += test1.compare_summary_and_others()
+        window.after(500, button_done, msg, button_number)
+
     elif button_number==3:
         button3_input_window()
+        if len(test1.new_acc)!=0:
+            status_msg.progress(f"Step {button_number} going on!\nNew accounts to add for new month {str(test1.new_acc)}")
+            status_bar.ongoingbar(button_number)
+        else:
+            msg = "\nNo more new accounts to add!"
+            window.after(500, button_done, msg, button_number)
+        
 
 def button_start(button_number): # Button click initially shows ongoing in the progress bar
     status_msg.progress(f"Step {button_number} going on!")
@@ -103,16 +113,18 @@ def button3_input_window():
     account_type_dropdown = tk.OptionMenu(input_window, account_type_var, *account_types)
     account_type_dropdown.grid(row=3, column=1, padx=20, pady=10)
 
+    def submit_account_details(account_number, account_name, account_type):
+        test1.add_account(account_number, account_name, account_type)
+        print("New Account Added!:")
+        print(f"Account Number: {account_number}")
+        print(f"Account Name: {account_name}")
+        print(f"Account Type: {account_type}")
+        input_window.destroy()
+
     # Submit Button
-    submit_button = tk.Button(input_window, text="Submit", command=lambda: submit_account_details(
+    submit_button = tk.Button(input_window, text="Submit", command=lambda:submit_account_details( 
         account_number_entry.get(), account_name_entry.get(), account_type_var.get()))
     submit_button.grid(row=4, column=0, columnspan=2, padx=5, pady=10)
-
-def submit_account_details(account_number, account_name, account_type):
-    print("New Account Added!:")
-    print(f"Account Number: {account_number}")
-    print(f"Account Name: {account_name}")
-    print(f"Account Type: {account_type}")
 
 # Create the main window
 window = tk.Tk()
@@ -133,7 +145,7 @@ buttons_frame = tk.Label(window, image=background_image, anchor=tk.CENTER, justi
 buttons_frame.place(relwidth=1, relheight=1)
 
 buttons = []
-button_description = ["", "\nSelect MONTHLY COGNOS Input File",
+button_description = ["", "\nSelect most recent budget file and\nSelect MONTHLY COGNOS Input File",
                       "\nCurrent and Previous Month Accounts Comparison",
                       "\nInsert an account number to the organizational sheets\n(If required)",
                       "",

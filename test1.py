@@ -1,4 +1,5 @@
 import openpyxl as xl
+import bisect
 
 # excel file used here
 excel_file = ""
@@ -62,7 +63,7 @@ def compare_account_numbers():
     else:
         msg = "\nPart 1 : No new account to add for new month!"
 
-    return msg, new_acc
+    return msg
 
 def compare_summary_and_others():
     summary_check = [] #data of the rows in summary to check
@@ -100,5 +101,54 @@ def compare_summary_and_others():
     msg = "\nPart 2 : Individual Org checking completed succesfully!"
     return msg
 
+#-----------------------------------------------------------------------------STEP_3---------------------------------------------------------------------------------
 def add_account(account_number, account_name, account_type):
+    global new_acc
+    print("Start")
+    accounts_index = {"Personnel Services":0,"Fringe Benefits":1,"Travel and Training":2,"Other Expenses":3,"Recovery":4}
+    starting_row = [11]
+    all_accounts = []
+    sub = []
+    row=10
+    break_both = False
+    while True:
+        if break_both:
+            break
+        try:
+            cell = wb["SUMMARY - FS (000000)"]['B'][row]
+            number = int(cell.value)
+            if(len(str(number))):
+                sub.append(number)
+        except:
+            all_accounts.append(sub)
+            sub = []
+            if wb["SUMMARY - FS (000000)"]['B'][row+1].value==None:
+                break_both = True
+                break
+            else:
+                starting_row.append(row+2)
+        row += 1
+    print(starting_row)
+
+    if account_type=="Personnel Services":
+        insert_index = bisect.bisect_left(all_accounts[0], int(account_number))
+        print("Insert at - " + str(insert_index + starting_row[0]))
+        all_accounts[0].insert(insert_index,int(account_number))
+        print(all_accounts[0])
+    elif account_type=="Fringe Benefits":
+        account_type="Fringe Benefits"
+    elif account_type=="Travel and Training":
+        account_type="Travel and Training"
+    elif account_type=="Other Expenses":
+        account_type="Other Expenses"
+    elif account_type=="Recovery":
+        account_type=="Recovery"
     
+    print("New account "+str(account_number)+" - '"+str(account_name)+"' added successfully!") 
+    try:
+        new_acc.remove(int(str(account_number).replace(" ",'')))
+    except:
+        new_acc
+    print(new_acc)
+
+#-----------------------------------------------------------------------------STEP_4---------------------------------------------------------------------------------
