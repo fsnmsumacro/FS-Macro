@@ -90,7 +90,7 @@ def compare_summary_and_others():
                 if cell.value is not None:
                     if str(cell.value).replace(" ","") != summary_check[i-10]:
                         print("Mismatch in line ", i+1, "with summary and ", sheet, cell.value,"!=", summary_check[i-10], "!\n")
-                        msg = "\nPart 2 : Mismatch found in "+sheet
+                        msg = "\nPart 2 : Checking stopped! Mismatch found in "+sheet
                         return msg
                 elif cell.value is None and i>=10:
                     if wb[sheet]['B'][i+1].value is None and wb[sheet]['B'][i+2].value:
@@ -130,25 +130,41 @@ def add_account(account_number, account_name, account_type):
         row += 1
     print(starting_row)
 
-    if account_type=="Personnel Services":
-        insert_index = bisect.bisect_left(all_accounts[0], int(account_number))
-        print("Insert at - " + str(insert_index + starting_row[0]))
-        all_accounts[0].insert(insert_index,int(account_number))
-        print(all_accounts[0])
-    elif account_type=="Fringe Benefits":
-        account_type="Fringe Benefits"
-    elif account_type=="Travel and Training":
-        account_type="Travel and Training"
-    elif account_type=="Other Expenses":
-        account_type="Other Expenses"
-    elif account_type=="Recovery":
-        account_type=="Recovery"
+    def change_other_account_type_starting(starting_row, index):
+        for i in range(index+1,len(starting_row)):
+            starting_row[i]+=1
+        return starting_row
     
+    def search_insert_position_and_insert(all_accounts, starting_row, index):
+        sheet_to_insert = wb["SUMMARY - FS (000000)"]
+        insert_index = bisect.bisect_left(all_accounts[index], int(account_number))
+        print("Insert at - " + str(insert_index + starting_row[index]))
+        num_row = insert_index + starting_row[index]
+        all_accounts[index].insert(insert_index,int(account_number))
+        starting_row = change_other_account_type_starting(starting_row, index)
+        sheet_to_insert.insert_rows(num_row)
+        sheet_to_insert[num_row][0].value = account_name
+        sheet_to_insert[num_row][1].value = account_number
+        return all_accounts, starting_row
+
+    if account_type=="Personnel Services":
+        all_accounts, starting_row = search_insert_position_and_insert(all_accounts, starting_row, 0)
+    elif account_type=="Fringe Benefits":
+        all_accounts, starting_row = search_insert_position_and_insert(all_accounts, starting_row, 1)
+    elif account_type=="Travel and Training":
+        all_accounts, starting_row = search_insert_position_and_insert(all_accounts, starting_row, 2)
+    elif account_type=="Other Expenses":
+        all_accounts, starting_row = search_insert_position_and_insert(all_accounts, starting_row, 3)
+    elif account_type=="Recovery":
+        all_accounts, starting_row = search_insert_position_and_insert(all_accounts, starting_row, 4)
+    
+    print(starting_row,"\n")
     print("New account "+str(account_number)+" - '"+str(account_name)+"' added successfully!") 
     try:
         new_acc.remove(int(str(account_number).replace(" ",'')))
     except:
         new_acc
     print(new_acc)
+    wb.save("New_modified.xlsm")
 
 #-----------------------------------------------------------------------------STEP_4---------------------------------------------------------------------------------
