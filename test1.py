@@ -43,7 +43,7 @@ def copy_monthly_sheet_data():
 
 #-----------------------------------------------------------------------------STEP_2---------------------------------------------------------------------------------
 def compare_account_numbers():
-    global new_acc
+    global new_acc, wb
     existing_accounts = []
     for cell in wb["SUMMARY - FS (000000)"]['B']:
         try:
@@ -142,9 +142,16 @@ def add_account(account_number, account_name, account_type):
         num_row = insert_index + starting_row[index]
         all_accounts[index].insert(insert_index,int(account_number))
         starting_row = change_other_account_type_starting(starting_row, index)
-        sheet_to_insert.insert_rows(num_row)
-        sheet_to_insert[num_row][0].value = account_name
-        sheet_to_insert[num_row][1].value = account_number
+        insert = 0 # variable to check which sheets to insert
+        for sheet_to_insert in wb.sheetnames:
+            if sheet_to_insert == "SUMMARY - FS (000000)":
+                insert = 1
+            elif sheet_to_insert == "Mapping":
+                insert = 0
+            if insert==1:
+                wb[sheet_to_insert].insert_rows(num_row)
+                wb[sheet_to_insert][num_row][0].value = account_name
+                wb[sheet_to_insert][num_row][1].value = account_number
         return all_accounts, starting_row
 
     if account_type=="Personnel Services":
