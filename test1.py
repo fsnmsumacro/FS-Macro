@@ -182,10 +182,12 @@ def add_account(account_number, account_name, account_type):
                         wb[sheet_to_insert][num_row][r].value = 0
                 for r in range(0,32):
                     if r!=16:
+                        cell = wb[sheet_to_insert][num_row][r]
                         if num_row in starting_row:
-                            wb[sheet_to_insert][num_row][r].style = wb[sheet_to_insert][num_row+1][r].style
+                            copy = wb[sheet_to_insert][num_row+1][r]
                         else:
-                            wb[sheet_to_insert][num_row][r].style = wb[sheet_to_insert][num_row-1][r].style
+                            copy = wb[sheet_to_insert][num_row-1][r]
+                        cell.style, cell.font, cell.fill, cell.alignment, cell.border = copy.style, copy.font, copy.fill, copy.alignment, copy.border
         return all_accounts, starting_row
 
     if account_type=="Personnel Services": # calling insert function according to account type
