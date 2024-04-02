@@ -60,6 +60,10 @@ def button_function(button_number): # Button functions on click
         else:
             msg = "\nNo more new accounts to add!"
             window.after(500, button_done, msg, button_number)
+    
+    elif button_number==4:
+        msg = test1.update_monthly_expenses_into_organizations()
+        window.after(500, button_done, msg, button_number)
         
 
 def button_start(button_number): # Button click initially shows ongoing in the progress bar
@@ -119,6 +123,7 @@ def button3_input_window():
         print(f"Account Number: {account_number}")
         print(f"Account Name: {account_name}")
         print(f"Account Type: {account_type}")
+        print(f"---------------------------------------")
         input_window.destroy()
 
     # Submit Button
