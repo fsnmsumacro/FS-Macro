@@ -22,13 +22,13 @@ class StatusBar(tk.Frame):
         self.canvas.pack(fill=tk.X)
 
     def ongoingbar(self, button_number):
-        part_width = 1200 // 9
+        part_width = 1200 // 4
         start_x = (button_number - 1) * part_width
         end_x = button_number * part_width
         self.canvas.create_rectangle(start_x, 0, end_x, 20, fill='yellow')
 
     def progressbar(self, button_number):
-        part_width = 1200 // 9
+        part_width = 1200 // 4
         start_x = (button_number - 1) * part_width
         end_x = button_number * part_width
         self.canvas.create_rectangle(start_x, 0, end_x, 20, fill='green')
@@ -46,6 +46,8 @@ def button_function(button_number): # Button functions on click
         test1.monthly_file_name = monthly_file.replace("/", "\\")
         test1.accounts = test1.copy_monthly_sheet_data()
         window.after(500, button_done, msg, button_number)
+        if test1.current_month=="Jul":
+            new_fy_window()
 
     elif button_number==2:
         msg = test1.compare_account_numbers()
@@ -97,7 +99,10 @@ def button3_input_window():
 
     # Account to add
     tk.Label(input_window, text="Account to add:").grid(row=0, column=0, padx=5, pady=5)
-    tk.Label(input_window, text=str(test1.new_acc)).grid(row=0, column=1, padx=5, pady=5)
+    if len(test1.new_acc) == 0:
+        tk.Label(input_window, text=str("No accounts to add!")).grid(row=0, column=1, padx=5, pady=5)
+    else:
+        tk.Label(input_window, text=str(test1.new_acc)).grid(row=0, column=1, padx=5, pady=5)
     
     # Account Number
     tk.Label(input_window, text="Account Number:").grid(row=1, column=0, padx=5, pady=5)
@@ -131,6 +136,26 @@ def button3_input_window():
         account_number_entry.get(), account_name_entry.get(), account_type_var.get()))
     submit_button.grid(row=4, column=0, columnspan=2, padx=5, pady=10)
 
+def new_fy_window():
+    input_window2 = tk.Toplevel(window)
+    input_window2.title("New Fiscal Year")
+
+    Label1 = tk.Label(input_window2, text="Current Month is JULY")
+    Label1.grid(row=1, column=0, padx=15, pady=5)
+    tk.Label(input_window2, text="Do you want to start a new fiscal year?").grid(row=2, column=0, padx=15, pady=5)
+
+    def new_fy():
+        status_msg.progress("New Fiscal Year processing...\n")
+        Label1.config(text="New Fiscal Year processing...")
+        msg = test1.new_fy_start()
+        status_msg.progress(f"New fiscal year added!\nContinue from Step 2. {msg}")
+        input_window2.destroy()
+
+    submit_button2 = tk.Button(input_window2, text="    Yes    ", command=lambda:new_fy())
+    submit_button2.grid(row=3, column=0, padx=15, pady=20)
+    cancel_button = tk.Button(input_window2, text="   Cancel   ", command=lambda:input_window2.destroy())
+    cancel_button.grid(row=3, column=1, padx=15, pady=20)
+
 # Create the main window
 window = tk.Tk()
 window.title("NMSU Facilities and Services")
@@ -151,15 +176,15 @@ buttons_frame.place(relwidth=1, relheight=1)
 
 buttons = []
 button_description = ["", "\nSelect most recent budget file and\nSelect MONTHLY COGNOS Input File",
-                      "\nCurrent and Previous Month Accounts Comparison",
+                      "\nCurrent and Previous Month Accounts Comparison\n",
                       "\nInsert an account number to the organizational sheets\n(If required)",
-                      "",
+                      "\nUpdate Accounts With Monthly Expenses\n",
                       "",
                       "",
                       "",
                       "",
                       ""]
-for i in range(1, 10):
+for i in range(1, 5):
     button = tk.Button(buttons_frame, text=f"STEP {i}{button_description[i]}", command=lambda i=i: button_click(i), padx=50, pady=20, width=40)
     button.grid(row=(i-1)//2, column=(i-1)%2, padx=10, pady=10)
     button.bind("<Enter>", on_enter)
