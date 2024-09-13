@@ -9,11 +9,13 @@ from datetime import datetime
 excel_file = ""
 monthly_file_name = ""
 wb = None
+wb_data = None
 accounts = []
 new_acc = []
 current_month = ""
 add = ""
 current_year = 0
+filename_year = 0
 close = 0
 cols = {"Jul":['R',1,1,7], "Aug":['S',3,2,8], "Sep":['T',5,3,9], "Oct":['U',7,4,10], "Nov":['V',9,5,11], "Dec":['W',11,6,12],
         "Jan":['X',13,7,1], "Feb":['Y',15,8,2], "Mar":['Z',17,9,3], "Apr":['AA',19,10,4], "May":['AB',21,11,5], "Jun":['AC',23,12,6],
@@ -31,12 +33,13 @@ def eomday(month):
     return [month,d,year]
 #-----------------------------------------------------------------------------STEP_1---------------------------------------------------------------------------------
 def copy_monthly_sheet_data():
-    global wb, cols, current_month, close, current_year, add
+    global wb, wb_data, cols, current_month, close, current_year, filename_year, add
     print("Running FS Accounting Financial Macro")
     print(f"---------------------------------------")
     # load the workbook
-    global wb, current_month, close
-    wb = xl.load_workbook(excel_file, keep_vba=False) 
+    global wb, wb_data, current_month, close
+    wb = xl.load_workbook(excel_file, keep_vba=False)
+    wb_data = xl.load_workbook(excel_file, keep_vba=False, data_only=True)
     sheets = wb.sheetnames
 
     # Clear all data from the destination sheet
@@ -70,6 +73,7 @@ def copy_monthly_sheet_data():
         wb['SUMMARY - FS (000000)']['B5'].value = cols[current_month][1]
     date = eomday(cols[current_month][3])
     wb['SUMMARY - FS (000000)']['B1'].value = str(date[2])
+    filename_year = date[2]
     if date[0]>6: current_year = date[2]-1
     else: current_year = date[2]
     wb['SUMMARY - FS (000000)']['A4'].value = (str(date[0])+"/"+str(date[1])+"/"+str(current_year))
@@ -94,15 +98,15 @@ def copy_monthly_sheet_data():
     
     accounts_monthly = list(set(accounts_monthly))
     if current_month== "Jun" and add!= "":
-        wb.save("New_Projected FY"+str(current_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+ " - " + add +".xlsx")
+        wb.save("New_Projected FY"+str(filename_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+ " - " + add +".xlsx")
     else:
-        wb.save("New_Projected FY"+str(current_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+".xlsx")    
+        wb.save("New_Projected FY"+str(filename_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+".xlsx")    
     print(f"---------------------------------------")
     return accounts_monthly
 
 #-----------------------------------------------------------------------------STEP_2---------------------------------------------------------------------------------
 def compare_account_numbers():
-    global new_acc, wb, cols, current_month, close, current_year, add
+    global new_acc, wb, cols, current_month, close, current_year, filename_year, add
     existing_accounts = []
     for cell in wb["SUMMARY - FS (000000)"]['B']:
         try:
@@ -163,7 +167,7 @@ def compare_summary_and_others():
 
 #-----------------------------------------------------------------------------STEP_3---------------------------------------------------------------------------------
 def add_account(account_number, account_name, account_type):
-    global new_acc, wb, cols, current_month, close, current_year, add
+    global new_acc, wb, cols, current_month, close, current_year, filename_year, add
     accounts_index = {"Personnel Services":0,"Fringe Benefits":1,"Travel and Training":2,"Other Expenses":3,"Recovery":4}
     starting_row = [11]
     closing_row = []
@@ -197,6 +201,10 @@ def add_account(account_number, account_name, account_type):
             starting_row[i]+=1
         for i in range(index,len(starting_row)):
             closing_row[i]+=1
+        for i in range(0,len(starting_row)):
+            wb["Mapping"]["O"+str(i+3)].value = starting_row[i]
+            wb["Mapping"]["P"+str(i+3)].value = closing_row[i]
+            wb["Mapping"]["S"+str(i+3)].value = int(wb["Mapping"]["S"+str(i+3)].value)+1
         return starting_row, closing_row
     
     def search_insert_position_and_insert(all_accounts, starting_row, index):
@@ -240,6 +248,19 @@ def add_account(account_number, account_name, account_type):
                         cell.alignment=copy(copy1.alignment)
                         cell.border=copy(copy1.border)
                         cell.alignment = copy(copy1.alignment)
+                for row_after in range(num_row+1, closing_row[6]+1):
+                  if row_after not in closing_row:
+                    if str(wb[sheet_to_insert][row_after][3].value).startswith('='): wb[sheet_to_insert][row_after][3].value = "=C"+ str(row_after)
+                    if str(wb[sheet_to_insert][row_after][4].value).startswith('='): wb[sheet_to_insert][row_after][4].value = "=D"+ str(row_after)
+                    wb[sheet_to_insert][row_after][5].value = "=SUM(R"+str(row_after)+":AF"+str(row_after)+")"
+                    wb[sheet_to_insert][row_after][7].value = "=+D"+str(row_after)+"-F"+str(row_after)+"-G"+str(row_after)
+                    if ")*24)" in str(wb[sheet_to_insert][row_after][10].value): wb[sheet_to_insert][row_after][10].value = "=(((+F"+str(row_after)+"-J"+str(row_after)+")/$B$5)*24)+J"+str(row_after)
+                    else: wb[sheet_to_insert][row_after][10].value = "=(((+F"+str(row_after)+"-J"+str(row_after)+")/$A$5)*12)+J"+str(row_after)
+                  else:
+                      idx = closing_row.index(row_after)
+                      for col in ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI']:
+                          wb[sheet_to_insert][col+str(row_after)].value = "=SUM("+col+str(starting_row[idx])+":"+col+str(closing_row[idx]-1)+")"
+                                 
         return all_accounts, starting_row, closing_row
 
     if account_type=="Personnel Services": # calling insert function according to account type
@@ -262,9 +283,9 @@ def add_account(account_number, account_name, account_type):
 
     print("Account to be added: ", new_acc, "\n")
     if current_month== "Jun" and add!= "":
-        wb.save("New_Projected FY"+str(current_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+ " - " + add +".xlsx")
+        wb.save("New_Projected FY"+str(filename_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+ " - " + add +".xlsx")
     else:
-        wb.save("New_Projected FY"+str(current_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+".xlsx")    
+        wb.save("New_Projected FY"+str(filename_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+".xlsx")    
 #-----------------------------------------------------------------------------STEP_4---------------------------------------------------------------------------------
 
 #def update_formula():
@@ -289,12 +310,12 @@ def add_account(account_number, account_name, account_type):
                             start = 1
             summary[str(col_letter)+str(row)].value=val
     if current_month== "Jun" and add!= "":
-        wb.save("New_Projected FY"+str(current_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+ " - " + add +".xlsx")
+        wb.save("New_Projected FY"+str(filename_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+ " - " + add +".xlsx")
     else:
-        wb.save("New_Projected FY"+str(current_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+".xlsx")    
+        wb.save("New_Projected FY"+str(filename_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+".xlsx")    
 #-----------------------------------------------------------------------------STEP_5---------------------------------------------------------------------------------
 def update_monthly_expenses_into_organizations():
-    global wb, cols, current_month, close, current_year, add
+    global wb, wb_data, cols, current_month, close, current_year, filename_year, add
     sheets = wb.sheetnames
     account_dict = {}
     for cell in wb["SUMMARY - FS (000000)"]['B']:
@@ -386,11 +407,19 @@ def update_monthly_expenses_into_organizations():
                 exp_dict.update({(ins_org, cols[current_month][0] + str(account_dict[cell_num])):ins_amount})
 
         #---------------- Adjusted Budgets ---------------
-        if (adj!=0):
-          try:
-            adj_dict[(ins_org,'D' + str(account_dict[cell_num]))] = adj_dict[ins_org,'D' + str(account_dict[cell_num])]+ adj
-          except:
-            adj_dict.update({(ins_org,'D' + str(account_dict[cell_num])):adj})
+        if current_month != 'Jul': 
+            if (adj!=0):
+                try:
+                    adj_dict[(ins_org,'D' + str(account_dict[cell_num]))] = adj_dict[ins_org,'D' + str(account_dict[cell_num])]+ adj
+                except:
+                    adj_dict.update({(ins_org,'D' + str(account_dict[cell_num])):adj})
+        else:
+            if (adj!=0):
+                try:
+                    adj_dict[(ins_org,'C' + str(account_dict[cell_num]))] = adj_dict[ins_org,'C' + str(account_dict[cell_num])]+ adj
+                except:
+                    adj_dict.update({(ins_org,'C' + str(account_dict[cell_num])):adj})
+
 
         #---------------- Commitments ---------------
         if (com!=0):
@@ -424,16 +453,16 @@ def update_monthly_expenses_into_organizations():
     print("Accounts updated with the monthly expenses\n-------------------------------------")
     msg = "\nAccounts updated with the monthly expenses"
     if current_month== "Jun" and add!= "":
-        wb.save("New_Projected FY"+str(current_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+ " - " + add +".xlsx")
-        print("COMPLETED! Please check 'New_Projected FY"+str(current_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+ " - " + add +".xlsx'\n-------------------------------------")
+        wb.save("New_Projected FY"+str(filename_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+ " - " + add +".xlsx")
+        print("COMPLETED! Please check 'New_Projected FY"+str(filename_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+ " - " + add +".xlsx'\n-------------------------------------")
     else:
-        wb.save("New_Projected FY"+str(current_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+".xlsx")
-        print("COMPLETED! Please check 'New_Projected FY"+str(current_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+".xlsx'\n-------------------------------------")
+        wb.save("New_Projected FY"+str(filename_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+".xlsx")
+        print("COMPLETED! Please check 'New_Projected FY"+str(filename_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+".xlsx'\n-------------------------------------")
     return msg
     
 #-----------------------------------------------------------------------------STEP_New_FY---------------------------------------------------------------------------------
 def new_fy_start():
-    global wb, current_month, current_year, cols, add
+    global wb, wb_data, current_month, current_year, filename_year, cols, add
     starting_row = [11]
     closing_row = []
     all_accounts = []
@@ -461,6 +490,47 @@ def new_fy_start():
         row += 1
     print("Start: ", starting_row, " Close: ", closing_row)
     
+    for i in range(5,90):
+        wb['Executive Summary']['BT'+str(i)].value = wb_data['Executive Summary']['BL'+str(i)].value
+        wb['Executive Summary']['BS'+str(i)].value = wb_data['Executive Summary']['BK'+str(i)].value
+        wb['Executive Summary']['BR'+str(i)].value = wb_data['Executive Summary']['BJ'+str(i)].value
+        wb['Executive Summary']['BQ'+str(i)].value = wb_data['Executive Summary']['BI'+str(i)].value
+        wb['Executive Summary']['BP'+str(i)].value = wb_data['Executive Summary']['BH'+str(i)].value
+        wb['Executive Summary']['BO'+str(i)].value = wb_data['Executive Summary']['BG'+str(i)].value
+        wb['Executive Summary']['BN'+str(i)].value = wb_data['Executive Summary']['BF'+str(i)].value
+        #----
+        wb['Executive Summary']['BL'+str(i)].value = wb_data['Executive Summary']['BD'+str(i)].value
+        wb['Executive Summary']['BK'+str(i)].value = wb_data['Executive Summary']['BC'+str(i)].value
+        wb['Executive Summary']['BJ'+str(i)].value = wb_data['Executive Summary']['BB'+str(i)].value
+        wb['Executive Summary']['BI'+str(i)].value = wb_data['Executive Summary']['BA'+str(i)].value
+        wb['Executive Summary']['BH'+str(i)].value = wb_data['Executive Summary']['AZ'+str(i)].value
+        wb['Executive Summary']['BG'+str(i)].value = wb_data['Executive Summary']['AY'+str(i)].value
+        wb['Executive Summary']['BF'+str(i)].value = wb_data['Executive Summary']['AX'+str(i)].value
+        #----
+        wb['Executive Summary']['BD'+str(i)].value = wb_data['Executive Summary']['AV'+str(i)].value
+        wb['Executive Summary']['BC'+str(i)].value = wb_data['Executive Summary']['AU'+str(i)].value
+        wb['Executive Summary']['BB'+str(i)].value = wb_data['Executive Summary']['AT'+str(i)].value
+        wb['Executive Summary']['BA'+str(i)].value = wb_data['Executive Summary']['AS'+str(i)].value
+        wb['Executive Summary']['AZ'+str(i)].value = wb_data['Executive Summary']['AR'+str(i)].value
+        wb['Executive Summary']['AY'+str(i)].value = wb_data['Executive Summary']['AQ'+str(i)].value
+        wb['Executive Summary']['AX'+str(i)].value = wb_data['Executive Summary']['AP'+str(i)].value
+        #----
+        wb['Executive Summary']['AV'+str(i)].value = wb_data['Executive Summary']['AN'+str(i)].value
+        wb['Executive Summary']['AU'+str(i)].value = wb_data['Executive Summary']['AM'+str(i)].value
+        wb['Executive Summary']['AT'+str(i)].value = wb_data['Executive Summary']['AL'+str(i)].value
+        wb['Executive Summary']['AS'+str(i)].value = wb_data['Executive Summary']['AK'+str(i)].value
+        wb['Executive Summary']['AR'+str(i)].value = wb_data['Executive Summary']['AJ'+str(i)].value
+        wb['Executive Summary']['AQ'+str(i)].value = wb_data['Executive Summary']['AI'+str(i)].value
+        wb['Executive Summary']['AP'+str(i)].value = wb_data['Executive Summary']['AH'+str(i)].value
+        #----
+        wb['Executive Summary']['AN'+str(i)].value = wb_data['Executive Summary']['U'+str(i)].value
+        wb['Executive Summary']['AM'+str(i)].value = wb_data['Executive Summary']['T'+str(i)].value
+        wb['Executive Summary']['AL'+str(i)].value = wb_data['Executive Summary']['S'+str(i)].value
+        wb['Executive Summary']['AK'+str(i)].value = wb_data['Executive Summary']['R'+str(i)].value
+        wb['Executive Summary']['AJ'+str(i)].value = wb_data['Executive Summary']['Q'+str(i)].value
+        wb['Executive Summary']['AI'+str(i)].value = wb_data['Executive Summary']['P'+str(i)].value
+        wb['Executive Summary']['AH'+str(i)].value = wb_data['Executive Summary']['O'+str(i)].value
+
     insert = 0
     change = ['G','I','J','R','S','T','U','V','W','X','Y','Z','AA','AB','AC','AD','AE','AF','AG','AH','AI']
     for sheet_to_insert in wb.sheetnames: #inserting to all the pages
@@ -468,8 +538,8 @@ def new_fy_start():
                 insert = 0
             if insert==1:
                 df = pd.read_excel(excel_file, sheet_name=sheet_to_insert)
-                for num_row in range(starting_row[0],closing_row[-1]+1):
-                  if num_row not in closing_row:
+                for num_row in range(starting_row[0],closing_row[-1]+4):
+                  if num_row not in closing_row and num_row!=(closing_row[-1]+1):
                     wb[sheet_to_insert]['P'+str(num_row)].value =  wb[sheet_to_insert]['O'+str(num_row)].value
                     wb[sheet_to_insert]['O'+str(num_row)].value =  wb[sheet_to_insert]['N'+str(num_row)].value
                     wb[sheet_to_insert]['N'+str(num_row)].value =  wb[sheet_to_insert]['M'+str(num_row)].value
@@ -484,7 +554,7 @@ def new_fy_start():
             if sheet_to_insert == "SUMMARY - FS (000000)":
                 insert = 1
     if current_month== "Jun" and add!= "":
-        wb.save("New_Projected FY"+str(current_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+ " - " + add +".xlsx")
+        wb.save("New_Projected FY"+str(filename_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+ " - " + add +".xlsx")
     else:
-        wb.save("New_Projected FY"+str(current_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+".xlsx")    
+        wb.save("New_Projected FY"+str(filename_year%1000)+" Budget "+ str(cols[current_month][2]) +" "+current_month+".xlsx")    
     return ""
