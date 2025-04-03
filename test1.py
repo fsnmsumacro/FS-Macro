@@ -352,16 +352,20 @@ def update_monthly_expenses_into_organizations():
             com = 0
             
             curr_org = int((row[4].value.split('-')[0]))
-            if str(curr_org) in map:
+            if str(curr_org) in map: #check if it is a recovery account
                 curr_org = curr_org-1
                 recovery = 1
             if str(curr_org) in str(org):
                 ins_org = org # get the organization to insert
 
-                if str(curr_org) in ing and row[5].value!="1800-INTERNAL SERVICE": #----------------18XX not added for FS Accounting----------------
-                     ins_amount = float(row[9].value) #----------------get the value to insert----------------
-                     adj = float(row[8].value) #----------------get the adjusted budget to insert----------------
-                     com = float(row[11].value) #----------------get the commitments to insert----------------
+                if str(curr_org) in ing and row[5].value=="1800-INTERNAL SERVICE" and row[6].value == "795360" and str(curr_org)=="500760":
+                    ins_amount = float(row[9].value) #----------------get the value to insert----------------
+                    adj = float(row[8].value) #----------------get the adjusted budget to insert----------------
+                    com = float(row[11].value) #----------------get the commitments to insert----------------
+                elif str(curr_org) in ing and row[5].value!="1800-INTERNAL SERVICE": #----------------18XX not added for FS Accounting----------------
+                    ins_amount = float(row[9].value) #----------------get the value to insert----------------
+                    adj = float(row[8].value) #----------------get the adjusted budget to insert----------------
+                    com = float(row[11].value) #----------------get the commitments to insert----------------
                 elif (str(curr_org) not in ing):
                     ins_amount = float(row[9].value) #----------------get the value to insert----------------
                     adj = float(row[8].value) #----------------get the adjusted budget to insert----------------
@@ -413,8 +417,18 @@ def update_monthly_expenses_into_organizations():
                     adj_dict[(ins_org,'D' + str(account_dict[cell_num]))] = adj_dict[ins_org,'D' + str(account_dict[cell_num])]+ adj
                 except:
                     adj_dict.update({(ins_org,'D' + str(account_dict[cell_num])):adj})
+            elif (adj==0 and ins_amount==0):
+                try:
+                    adj_dict[(ins_org,'D' + str(account_dict[cell_num]))] = adj_dict[ins_org,'D' + str(account_dict[cell_num])]+ adj
+                except:
+                    adj_dict.update({(ins_org,'D' + str(account_dict[cell_num])):adj})
         else:
             if (adj!=0):
+                try:
+                    adj_dict[(ins_org,'C' + str(account_dict[cell_num]))] = adj_dict[ins_org,'C' + str(account_dict[cell_num])]+ adj
+                except:
+                    adj_dict.update({(ins_org,'C' + str(account_dict[cell_num])):adj})
+            elif (adj==0 and ins_amount==0):
                 try:
                     adj_dict[(ins_org,'C' + str(account_dict[cell_num]))] = adj_dict[ins_org,'C' + str(account_dict[cell_num])]+ adj
                 except:
@@ -450,6 +464,8 @@ def update_monthly_expenses_into_organizations():
         wb[key[0]][key[1]].value = adj_dict[key]
     for key in com_dict.keys():
         wb[key[0]][key[1]].value = com_dict[key]
+
+        
     print("Accounts updated with the monthly expenses\n-------------------------------------")
     msg = "\nAccounts updated with the monthly expenses"
     if current_month== "Jun" and add!= "":
