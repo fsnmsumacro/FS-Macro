@@ -441,6 +441,7 @@ def update_monthly_expenses_into_organizations():
             com_dict[(ins_org,'G' + str(account_dict[cell_num]))] = com_dict[ins_org,'G' + str(account_dict[cell_num])]+ com
           except:
             com_dict.update({(ins_org,'G' + str(account_dict[cell_num])):com})
+            
         #------------------------------------------------
         
     for key in exp_dict.keys():
